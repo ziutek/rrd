@@ -28,6 +28,14 @@ char *rrdUpdate(const char *filename, const char *template, int argc, const char
 	return rrdError();
 }
 
+//connect to opt_daemon and update
+//args ["-d", "opt_daemon", "-t", "opt_tmplt", "filename", "data"]
+char *rrdUpdateDaemon(int argc, const char **argv) {
+	rrd_clear_error();
+	rrd_update(argc, argv);
+	return rrdError();
+}
+
 char *rrdGraph(rrd_info_t **ret, int argc, char **argv) {
 	rrd_clear_error();
 	*ret = rrd_graph_v(argc, argv);
@@ -43,6 +51,14 @@ char *rrdInfo(rrd_info_t **ret, char *filename) {
 char *rrdFetch(int *ret, char *filename, const char *cf, time_t *start, time_t *end, unsigned long *step, unsigned long *ds_cnt, char ***ds_namv, double **data) {
 	rrd_clear_error();
 	*ret = rrd_fetch_r(filename, cf, start, end, step, ds_cnt, ds_namv, data);
+	return rrdError();
+}
+
+//connect to opt_deamon and fetch
+//ret, argc ["-d", "opt_daemon", "filename", "cf"], start, end, step, ds_cnt, ds_namv, data
+char *rrdFetchDaemon(int *ret, int argc, char **argv, time_t *start, time_t *end, unsigned long *step, unsigned long *ds_cnt, char ***ds_namv, double **data) {
+	rrd_clear_error();
+	*ret = rrd_fetch(argc, argv, start, end, step, ds_cnt, ds_namv, data);
 	return rrdError();
 }
 
