@@ -29,7 +29,7 @@ char *rrdUpdate(const char *filename, const char *template, int argc, const char
 }
 
 //connect to opt_daemon and update
-//argc ["-d", "opt_daemon", "-t", "opt_tmplt", "filename", "data"]
+//argc ["filename", "data", "-d", "opt_daemon", "-t", "opt_tmplt"]
 char *rrdUpdateDaemon(int argc, char **argv) {
 	rrd_clear_error();
 	rrd_update(argc, argv);
@@ -55,7 +55,7 @@ char *rrdFetch(int *ret, char *filename, const char *cf, time_t *start, time_t *
 }
 
 //connect to opt_deamon and fetch
-//ret, argc ["-d", "opt_daemon", "filename", "cf"], start, end, step, ds_cnt, ds_namv, data
+//ret, argc ["filename", "cf", "-d", "opt_daemon"], start, end, step, ds_cnt, ds_namv, data]
 char *rrdFetchDaemon(int *ret, int argc, char **argv, time_t *start, time_t *end, unsigned long *step, unsigned long *ds_cnt, char ***ds_namv, double **data) {
 	rrd_clear_error();
 	*ret = rrd_fetch(argc, argv, start, end, step, ds_cnt, ds_namv, data);

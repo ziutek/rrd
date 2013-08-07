@@ -101,6 +101,7 @@ func (c *Creator) Create(overwrite bool) error {
 type Updater struct {
 	filename cstring
 	template cstring
+    daemon cstring
 
 	args []unsafe.Pointer
 }
@@ -111,6 +112,10 @@ func NewUpdater(filename string) *Updater {
 
 func (u *Updater) SetTemplate(dsName ...string) {
 	u.template = newCstring(strings.Join(dsName, ":"))
+}
+
+func (u *Updater) SetDaemon(daemon string) {
+	u.daemon = newCstring(daemon)
 }
 
 // Cache chaches data for later save using Update(). Use it to avoid
@@ -124,13 +129,34 @@ func (u *Updater) Cache(args ...interface{}) {
 // If you specify args it saves them immediately.
 func (u *Updater) Update(args ...interface{}) error {
 	if len(args) != 0 {
-		a := make([]unsafe.Pointer, 1)
-		a[0] = newCstring(join(args)).p()
-		return u.update(a)
+        if u.daemon != nil {
+		    a := make([]unsafe.Pointer, 5)
+            a[0] = newCstring("update").p()
+            a[1] = u.filename.p()
+            a[2] = newCstring("--daemon").p()
+            a[3] = u.daemon.p()
+            a[4] = newCstring(join(args)).p()
+		    return u.updated(a)
+        }else{
+		    a := make([]unsafe.Pointer, 1)
+            a[0] = newCstring(join(args)).p()
+		    return u.update(a)
+        }
 	} else if len(u.args) != 0 {
-		err := u.update(u.args)
-		u.args = nil
-		return err
+        var err error
+        if u.daemon != nil {
+		    a := make([]unsafe.Pointer, 4)
+            a[0] = newCstring("update").p()
+            a[1] = u.filename.p()
+            a[2] = newCstring("--daemon").p()
+            a[3] = u.daemon.p()
+            b := append(a, u.args[0:]...)
+            err = u.updated(b)
+        }else{
+            err = u.update(u.args)
+        }
+        u.args = nil
+        return err
 	}
 	return nil
 }
