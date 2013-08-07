@@ -29,8 +29,8 @@ char *rrdUpdate(const char *filename, const char *template, int argc, const char
 }
 
 //connect to opt_daemon and update
-//args ["-d", "opt_daemon", "-t", "opt_tmplt", "filename", "data"]
-char *rrdUpdateDaemon(int argc, const char **argv) {
+//argc ["-d", "opt_daemon", "-t", "opt_tmplt", "filename", "data"]
+char *rrdUpdateDaemon(int argc, char **argv) {
 	rrd_clear_error();
 	rrd_update(argc, argv);
 	return rrdError();
