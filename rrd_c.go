@@ -450,6 +450,6 @@ func Fetch(daemon, filename, cf string, start, end time.Time, step time.Duration
 
 // FreeValues free values memory allocated by C.
 func (r *FetchResult) FreeValues() {
-	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&r.values)))
+	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&r.Values)))
 	C.free(unsafe.Pointer(sliceHeader.Data))
 }

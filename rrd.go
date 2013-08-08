@@ -421,9 +421,9 @@ type FetchResult struct {
 	Step     time.Duration
 	DsNames  []string
 	RowCnt   int
-	values   []float64
+	Values   []float64
 }
 
 func (r *FetchResult) ValueAt(dsIndex, rowIndex int) float64 {
-	return r.values[len(r.DsNames)*rowIndex+dsIndex]
+	return r.Values[len(r.DsNames)*rowIndex+dsIndex]
 }
