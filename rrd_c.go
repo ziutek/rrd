@@ -60,6 +60,16 @@ func (c *Creator) create() error {
 	return makeError(e)
 }
 
+func (c *Creator) created() error {
+
+    args := makeArgs(c.args)
+	e := C.rrdCreateViaDaemon(
+		C.int(len(args)),
+		&args[0],
+	)
+	return makeError(e)
+}
+
 func (u *Updater) update(args []unsafe.Pointer) error {
 	e := C.rrdUpdate(
 		(*C.char)(u.filename.p()),

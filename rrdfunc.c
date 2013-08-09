@@ -21,6 +21,11 @@ char *rrdCreate(const char *filename, unsigned long step, time_t start, int argc
 	rrd_create_r(filename, step, start, argc, argv);
 	return rrdError();
 }
+char *rrdCreateViaDaemon(int argc, char **argv) {
+	rrd_clear_error();
+	rrd_create(argc, argv);
+	return rrdError();
+}
 
 char *rrdUpdate(const char *filename, const char *template, int argc, const char **argv) {
 	rrd_clear_error();

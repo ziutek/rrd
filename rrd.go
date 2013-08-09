@@ -3,9 +3,11 @@ package rrd
 
 import (
 	"fmt"
+    "log"
 	"math"
-	"os"
 	"strings"
+    "strconv"
+    "os"
 	"time"
 	"unsafe"
 )
@@ -51,6 +53,7 @@ func join(args []interface{}) string {
 }
 
 type Creator struct {
+    daemon string
 	filename string
 	start    time.Time
 	step     uint
@@ -64,6 +67,7 @@ type Creator struct {
 //	step     - base interval in seconds with which data will be fed into RRD
 func NewCreator(filename string, start time.Time, step uint) *Creator {
 	return &Creator{
+        daemon: "",
 		filename: filename,
 		start:    start,
 		step:     step,
@@ -78,22 +82,39 @@ func (c *Creator) RRA(cf string, args ...interface{}) {
 	c.args = append(c.args, "RRA:"+cf+":"+join(args))
 }
 
+func (c *Creator) SetDaemon(daemon string) {
+    c.daemon = daemon
+}
+
 // Create creates new database file. If overwrite is true it overwrites
 // database file if exists. If overwrite is false it returns error if file
 // exists (you can use os.IsExist function to check this case).
+// update by laiwei: in rrdcached 1.5.x, support --no-overwrite, --daemon
 func (c *Creator) Create(overwrite bool) error {
+    if c.daemon == "" {
+        if !overwrite {
+            f, err := os.OpenFile(
+                c.filename,
+                os.O_WRONLY|os.O_CREATE|os.O_EXCL,
+                0666,
+            )
+            if err != nil {
+                return err
+            }
+            f.Close()
+        }
+        return c.create()
+    }
+
+    new_args := []string{"create", c.filename}
 	if !overwrite {
-		f, err := os.OpenFile(
-			c.filename,
-			os.O_WRONLY|os.O_CREATE|os.O_EXCL,
-			0666,
-		)
-		if err != nil {
-			return err
-		}
-		f.Close()
+        new_args = append(new_args, "--no-overwrite")
 	}
-	return c.create()
+    new_args = append(new_args, []string{"--daemon", c.daemon}...)
+    new_args = append(new_args, []string{"--start", strconv.FormatInt(c.start.Unix(), 10), "--step", fmt.Sprintf("%v", c.step)}...)
+    c.args = append(new_args, c.args...)
+    log.Printf("create rrd: %s", c.args)
+	return c.created()
 }
 
 // Use cstring and unsafe.Pointer to avoid alocations for C calls
