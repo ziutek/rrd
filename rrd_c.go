@@ -407,9 +407,11 @@ func Fetch(daemon, filename, cf string, start, end time.Time, step time.Duration
 	cCf := C.CString(cf)
 	defer freeCString(cCf)
 
+    //TODO:may not use, rrdtool rrd_fetch need to be fixed
 	cStart := C.time_t(start.Unix())
 	cEnd := C.time_t(end.Unix())
 	cStep := C.ulong(step.Seconds())
+
 	var (
 		ret      C.int
 		cDsCnt   C.ulong
@@ -419,12 +421,18 @@ func Fetch(daemon, filename, cf string, start, end time.Time, step time.Duration
 
     var err error
     if daemon != "" {
-        s := make([]string, 5)
+        s := make([]string, 11)
         s[0] = "fetch"
         s[1] = filename
         s[2] = cf
         s[3] = "--daemon"
         s[4] = daemon
+        s[5] = "--start"
+        s[6] = strconv.FormatInt(start.Unix(), 10)
+        s[7] = "--end"
+        s[8] = strconv.FormatInt(end.Unix(), 10)
+        s[9] = "-r"
+        s[10] = strconv.FormatInt(int64(step.Seconds()), 10)
         a := makeArgs(s)
         defer freeArgs(a)
 	    err = makeError(C.rrdFetchDaemon(&ret, C.int(len(a)), &a[0], &cStart, &cEnd, &cStep, &cDsCnt, &cDsNames, &cData))
