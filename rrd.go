@@ -3,9 +3,11 @@ package rrd
 
 import (
 	"fmt"
+    "log"
 	"math"
-	"os"
 	"strings"
+    "strconv"
+    "os"
 	"time"
 	"unsafe"
 )
@@ -51,6 +53,7 @@ func join(args []interface{}) string {
 }
 
 type Creator struct {
+    daemon string
 	filename string
 	start    time.Time
 	step     uint
@@ -64,6 +67,7 @@ type Creator struct {
 //	step     - base interval in seconds with which data will be fed into RRD
 func NewCreator(filename string, start time.Time, step uint) *Creator {
 	return &Creator{
+        daemon: "",
 		filename: filename,
 		start:    start,
 		step:     step,
@@ -78,22 +82,39 @@ func (c *Creator) RRA(cf string, args ...interface{}) {
 	c.args = append(c.args, "RRA:"+cf+":"+join(args))
 }
 
+func (c *Creator) SetDaemon(daemon string) {
+    c.daemon = daemon
+}
+
 // Create creates new database file. If overwrite is true it overwrites
 // database file if exists. If overwrite is false it returns error if file
 // exists (you can use os.IsExist function to check this case).
+// update by laiwei: in rrdcached 1.5.x, support --no-overwrite, --daemon
 func (c *Creator) Create(overwrite bool) error {
+    if c.daemon == "" {
+        if !overwrite {
+            f, err := os.OpenFile(
+                c.filename,
+                os.O_WRONLY|os.O_CREATE|os.O_EXCL,
+                0666,
+            )
+            if err != nil {
+                return err
+            }
+            f.Close()
+        }
+        return c.create()
+    }
+
+    new_args := []string{"create", c.filename}
 	if !overwrite {
-		f, err := os.OpenFile(
-			c.filename,
-			os.O_WRONLY|os.O_CREATE|os.O_EXCL,
-			0666,
-		)
-		if err != nil {
-			return err
-		}
-		f.Close()
+        new_args = append(new_args, "--no-overwrite")
 	}
-	return c.create()
+    new_args = append(new_args, []string{"--daemon", c.daemon}...)
+    new_args = append(new_args, []string{"--start", strconv.FormatInt(c.start.Unix(), 10), "--step", fmt.Sprintf("%v", c.step)}...)
+    c.args = append(new_args, c.args...)
+    log.Printf("create rrd: %s", c.args)
+	return c.created()
 }
 
 // Use cstring and unsafe.Pointer to avoid alocations for C calls
@@ -101,6 +122,7 @@ func (c *Creator) Create(overwrite bool) error {
 type Updater struct {
 	filename cstring
 	template cstring
+    daemon cstring
 
 	args []unsafe.Pointer
 }
@@ -111,6 +133,10 @@ func NewUpdater(filename string) *Updater {
 
 func (u *Updater) SetTemplate(dsName ...string) {
 	u.template = newCstring(strings.Join(dsName, ":"))
+}
+
+func (u *Updater) SetDaemon(daemon string) {
+	u.daemon = newCstring(daemon)
 }
 
 // Cache chaches data for later save using Update(). Use it to avoid
@@ -124,13 +150,34 @@ func (u *Updater) Cache(args ...interface{}) {
 // If you specify args it saves them immediately.
 func (u *Updater) Update(args ...interface{}) error {
 	if len(args) != 0 {
-		a := make([]unsafe.Pointer, 1)
-		a[0] = newCstring(join(args)).p()
-		return u.update(a)
+        if u.daemon != nil {
+		    a := make([]unsafe.Pointer, 5)
+            a[0] = newCstring("update").p()
+            a[1] = u.filename.p()
+            a[2] = newCstring("--daemon").p()
+            a[3] = u.daemon.p()
+            a[4] = newCstring(join(args)).p()
+		    return u.updated(a)
+        }else{
+		    a := make([]unsafe.Pointer, 1)
+            a[0] = newCstring(join(args)).p()
+		    return u.update(a)
+        }
 	} else if len(u.args) != 0 {
-		err := u.update(u.args)
-		u.args = nil
-		return err
+        var err error
+        if u.daemon != nil {
+		    a := make([]unsafe.Pointer, 4)
+            a[0] = newCstring("update").p()
+            a[1] = u.filename.p()
+            a[2] = newCstring("--daemon").p()
+            a[3] = u.daemon.p()
+            b := append(a, u.args[0:]...)
+            err = u.updated(b)
+        }else{
+            err = u.update(u.args)
+        }
+        u.args = nil
+        return err
 	}
 	return nil
 }
@@ -395,9 +442,9 @@ type FetchResult struct {
 	Step     time.Duration
 	DsNames  []string
 	RowCnt   int
-	values   []float64
+	Values   []float64
 }
 
 func (r *FetchResult) ValueAt(dsIndex, rowIndex int) float64 {
-	return r.values[len(r.DsNames)*rowIndex+dsIndex]
+	return r.Values[len(r.DsNames)*rowIndex+dsIndex]
 }

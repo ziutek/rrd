@@ -60,6 +60,16 @@ func (c *Creator) create() error {
 	return makeError(e)
 }
 
+func (c *Creator) created() error {
+
+    args := makeArgs(c.args)
+	e := C.rrdCreateViaDaemon(
+		C.int(len(args)),
+		&args[0],
+	)
+	return makeError(e)
+}
+
 func (u *Updater) update(args []unsafe.Pointer) error {
 	e := C.rrdUpdate(
 		(*C.char)(u.filename.p()),
@@ -70,6 +80,14 @@ func (u *Updater) update(args []unsafe.Pointer) error {
 	return makeError(e)
 }
 
+//["filename", "data", "-d", "opt_daemon", "-t", "opt_tmplt"]
+func (u *Updater) updated(args []unsafe.Pointer) error {
+	e := C.rrdUpdateDaemon(
+		C.int(len(args)),
+		(**C.char)(unsafe.Pointer(&args[0])),
+	)
+	return makeError(e)
+}
 var (
 	graphv           = C.CString("graphv")
 	oStart           = C.CString("-s")
@@ -383,21 +401,44 @@ func Info(filename string) (map[string]interface{}, error) {
 }
 
 // Fetch retrieves data from RRD file.
-func Fetch(filename, cf string, start, end time.Time, step time.Duration) (FetchResult, error) {
+func Fetch(daemon, filename, cf string, start, end time.Time, step time.Duration) (FetchResult, error) {
 	fn := C.CString(filename)
 	defer freeCString(fn)
 	cCf := C.CString(cf)
 	defer freeCString(cCf)
+
+    //TODO:may not use, rrdtool rrd_fetch need to be fixed
 	cStart := C.time_t(start.Unix())
 	cEnd := C.time_t(end.Unix())
 	cStep := C.ulong(step.Seconds())
+
 	var (
 		ret      C.int
 		cDsCnt   C.ulong
 		cDsNames **C.char
 		cData    *C.double
 	)
-	err := makeError(C.rrdFetch(&ret, fn, cCf, &cStart, &cEnd, &cStep, &cDsCnt, &cDsNames, &cData))
+
+    var err error
+    if daemon != "" {
+        s := make([]string, 11)
+        s[0] = "fetch"
+        s[1] = filename
+        s[2] = cf
+        s[3] = "--daemon"
+        s[4] = daemon
+        s[5] = "--start"
+        s[6] = strconv.FormatInt(start.Unix(), 10)
+        s[7] = "--end"
+        s[8] = strconv.FormatInt(end.Unix(), 10)
+        s[9] = "-r"
+        s[10] = strconv.FormatInt(int64(step.Seconds()), 10)
+        a := makeArgs(s)
+        defer freeArgs(a)
+	    err = makeError(C.rrdFetchDaemon(&ret, C.int(len(a)), &a[0], &cStart, &cEnd, &cStep, &cDsCnt, &cDsNames, &cData))
+    }else {
+	    err = makeError(C.rrdFetch(&ret, fn, cCf, &cStart, &cEnd, &cStep, &cDsCnt, &cDsNames, &cData))
+    }
 	if err != nil {
 		return FetchResult{filename, cf, start, end, step, nil, 0, nil}, err
 	}
@@ -427,6 +468,6 @@ func Fetch(filename, cf string, start, end time.Time, step time.Duration) (Fetch
 
 // FreeValues free values memory allocated by C.
 func (r *FetchResult) FreeValues() {
-	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&r.values)))
+	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&r.Values)))
 	C.free(unsafe.Pointer(sliceHeader.Data))
 }

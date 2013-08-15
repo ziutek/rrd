@@ -21,10 +21,23 @@ char *rrdCreate(const char *filename, unsigned long step, time_t start, int argc
 	rrd_create_r(filename, step, start, argc, argv);
 	return rrdError();
 }
+char *rrdCreateViaDaemon(int argc, char **argv) {
+	rrd_clear_error();
+	rrd_create(argc, argv);
+	return rrdError();
+}
 
 char *rrdUpdate(const char *filename, const char *template, int argc, const char **argv) {
 	rrd_clear_error();
 	rrd_update_r(filename, template, argc, argv);
+	return rrdError();
+}
+
+//connect to opt_daemon and update
+//argc ["filename", "data", "-d", "opt_daemon", "-t", "opt_tmplt"]
+char *rrdUpdateDaemon(int argc, char **argv) {
+	rrd_clear_error();
+	rrd_update(argc, argv);
 	return rrdError();
 }
 
@@ -43,6 +56,14 @@ char *rrdInfo(rrd_info_t **ret, char *filename) {
 char *rrdFetch(int *ret, char *filename, const char *cf, time_t *start, time_t *end, unsigned long *step, unsigned long *ds_cnt, char ***ds_namv, double **data) {
 	rrd_clear_error();
 	*ret = rrd_fetch_r(filename, cf, start, end, step, ds_cnt, ds_namv, data);
+	return rrdError();
+}
+
+//connect to opt_deamon and fetch
+//ret, argc ["filename", "cf", "-d", "opt_daemon"], start, end, step, ds_cnt, ds_namv, data]
+char *rrdFetchDaemon(int *ret, int argc, char **argv, time_t *start, time_t *end, unsigned long *step, unsigned long *ds_cnt, char ***ds_namv, double **data) {
+	rrd_clear_error();
+	*ret = rrd_fetch(argc, argv, start, end, step, ds_cnt, ds_namv, data);
 	return rrdError();
 }
 

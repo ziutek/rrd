@@ -1,3 +1,11 @@
+# UPDATE by laiwei
+
+## support rrdtool-1.5, can create,fetch,update rrdfile via rrdcached
+
+    go get github.com/laiwei/rrd
+
+
+
 # Go (golang) Bindings for rrdtool C library (rrdtool)
 
 This package implements [Go](http://golang.org) (golang) bindings for the [rrdtool](http://oss.oetiker.ch/rrdtool/) C API.
