@@ -292,6 +292,10 @@ func (g *Grapher) SetDaemon(daemon string) {
 	g.daemon = daemon
 }
 
+func (g *Grapher) AddOptions(options ...string) {
+	g.args = append(g.args, options...)
+}
+
 func (g *Grapher) push(cmd string, options []string) {
 	if len(options) > 0 {
 		cmd += ":" + strings.Join(options, ":")
