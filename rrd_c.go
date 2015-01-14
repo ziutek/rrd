@@ -457,7 +457,7 @@ func (r *FetchResult) FreeValues() {
 	C.free(unsafe.Pointer(sliceHeader.Data))
 }
 
-// Values returns copy of internal array of values. 
+// Values returns copy of internal array of values.
 func (r *FetchResult) Values() []float64 {
 	return append([]float64{}, r.values...)
 }
@@ -502,7 +502,7 @@ func (e *Exporter) xport(start, end time.Time, step time.Duration) (XportResult,
 	}
 	C.free(unsafe.Pointer(cLegends))
 
-	rowCnt := (int(cEnd)-int(cStart))/int(cStep) + 1
+	rowCnt := (int(cEnd) - int(cStart)) / int(cStep) //+ 1 // FIXED: + 1 added extra uninitialized value
 	valuesLen := colCnt * rowCnt
 	values := make([]float64, valuesLen)
 	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&values)))
