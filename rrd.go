@@ -70,10 +70,16 @@ func NewCreator(filename string, start time.Time, step uint) *Creator {
 	}
 }
 
+// DS formats a DS argument and appends it to the list of arguments to be
+// passed to rrdcreate(). Each element of args is formatted with fmt.Sprint().
+// Please see the rrdcreate(1) manual page for in-depth documentation.
 func (c *Creator) DS(name, compute string, args ...interface{}) {
 	c.args = append(c.args, "DS:"+name+":"+compute+":"+join(args))
 }
 
+// RRA formats an RRA argument and appends it to the list of arguments to be
+// passed to rrdcreate(). Each element of args is formatted with fmt.Sprint().
+// Please see the rrdcreate(1) manual page for in-depth documentation.
 func (c *Creator) RRA(cf string, args ...interface{}) {
 	c.args = append(c.args, "RRA:"+cf+":"+join(args))
 }
@@ -96,7 +102,7 @@ func (c *Creator) Create(overwrite bool) error {
 	return c.create()
 }
 
-// Use cstring and unsafe.Pointer to avoid alocations for C calls
+// Use cstring and unsafe.Pointer to avoid allocations for C calls
 
 type Updater struct {
 	filename cstring

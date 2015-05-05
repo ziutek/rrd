@@ -161,3 +161,34 @@ func TestAll(t *testing.T) {
 		row++
 	}
 }
+
+func ExampleCreator_DS() {
+	c := &Creator{}
+
+	// Add a normal data source, i.e. one of GAUGE, COUNTER, DERIVE and ABSOLUTE:
+	c.DS("regular_ds", "DERIVE",
+		900, /* heartbeat */
+		0,   /* min */
+		"U" /* max */)
+
+	// Add a computed
+	c.DS("computed_ds", "COMPUTE",
+		"regular_ds,8,*" /* RPN expression */)
+}
+
+func ExampleCreator_RRA() {
+	c := &Creator{}
+
+	// Add a normal consolidation function, i.e. one of MIN, MAX, AVERAGE and LAST:
+	c.RRA("AVERAGE",
+		0.3, /* xff */
+		5,   /* steps */
+		1200 /* rows */)
+
+	// Add aberrant behavior detection:
+	c.RRA("HWPREDICT",
+		1200, /* rows */
+		0.4,  /* alpha */
+		0.5,  /* beta */
+		288 /* seasonal period */)
+}
