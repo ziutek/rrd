@@ -272,7 +272,7 @@ func (g *Grapher) SetLazy() {
 }
 
 func (g *Grapher) SetColor(colortag, color string) {
-	g.colors[colortag] = colortag + "#" + color
+	g.colors[colortag] = color
 }
 
 func (g *Grapher) SetSlopeMode() {

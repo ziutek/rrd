@@ -224,8 +224,8 @@ func (g *Grapher) makeArgs(filename string, start, end time.Time) []*C.char {
 	if g.lazy {
 		args = append(args, oLazy)
 	}
-	for _, color := range g.colors {
-		args = append(args, oColor, C.CString(color))
+	for tag, color := range g.colors {
+		args = append(args, oColor, C.CString(tag+"#"+color))
 	}
 	if g.slopeMode {
 		args = append(args, oSlopeMode)
