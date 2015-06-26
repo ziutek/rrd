@@ -171,7 +171,7 @@ type Grapher struct {
 
 	lazy bool
 
-	color string
+	colors map[string]string
 
 	slopeMode bool
 
@@ -196,6 +196,7 @@ func NewGrapher() *Grapher {
 		upperLimit:    -math.MaxFloat64,
 		lowerLimit:    math.MaxFloat64,
 		unitsExponent: minInt,
+		colors:        make(map[string]string),
 	}
 }
 
@@ -271,7 +272,7 @@ func (g *Grapher) SetLazy() {
 }
 
 func (g *Grapher) SetColor(colortag, color string) {
-	g.color = colortag + "#" + color
+	g.colors[colortag] = colortag + "#" + color
 }
 
 func (g *Grapher) SetSlopeMode() {

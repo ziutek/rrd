@@ -224,8 +224,8 @@ func (g *Grapher) makeArgs(filename string, start, end time.Time) []*C.char {
 	if g.lazy {
 		args = append(args, oLazy)
 	}
-	if g.color != "" {
-		args = append(args, oColor, C.CString(g.color))
+	for _, color := range g.colors {
+		args = append(args, oColor, C.CString(color))
 	}
 	if g.slopeMode {
 		args = append(args, oSlopeMode)
@@ -459,7 +459,7 @@ func (r *FetchResult) FreeValues() {
 	C.free(unsafe.Pointer(sliceHeader.Data))
 }
 
-// Values returns copy of internal array of values. 
+// Values returns copy of internal array of values.
 func (r *FetchResult) Values() []float64 {
 	return append([]float64{}, r.values...)
 }
