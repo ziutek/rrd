@@ -29,7 +29,7 @@ func newCstring(s string) *cstring {
 
 func (cs *cstring) Free() {
 	if cs != nil {
-		C.free(cs)
+		C.free(unsafe.Pointer(cs))
 	}
 }
 
