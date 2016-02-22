@@ -28,7 +28,9 @@ func newCstring(s string) *cstring {
 }
 
 func (cs *cstring) Free() {
-	C.free(cs)
+	if cs != nil {
+		C.free(cs)
+	}
 }
 
 func (cs *cstring) String() string {

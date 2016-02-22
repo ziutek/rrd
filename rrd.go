@@ -128,6 +128,7 @@ func cfree(u *Updater) {
 }
 
 func (u *Updater) SetTemplate(dsName ...string) {
+	u.template.Free()
 	u.template = newCstring(strings.Join(dsName, ":"))
 }
 
@@ -142,9 +143,9 @@ func (u *Updater) Cache(args ...interface{}) {
 // If you specify args it saves them immediately.
 func (u *Updater) Update(args ...interface{}) error {
 	if len(args) != 0 {
-		a := make([]*cstring, 1)
-		a[0] = newCstring(join(args))
-		return u.update(a)
+		cs := newCstring(join(args))
+		err :=  u.update([]*cstring{a})
+		cs.Free()
 	} else if len(u.args) != 0 {
 		err := u.update(u.args)
 		u.args = nil
