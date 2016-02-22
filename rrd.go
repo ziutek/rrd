@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"runtime"
 	"strings"
 	"time"
-	"unsafe"
 )
 
 type Error string
@@ -16,6 +16,7 @@ func (e Error) Error() string {
 	return string(e)
 }
 
+/*
 type cstring []byte
 
 func newCstring(s string) cstring {
@@ -34,6 +35,7 @@ func (cs cstring) p() unsafe.Pointer {
 func (cs cstring) String() string {
 	return string(cs[:len(cs)-1])
 }
+*/
 
 func join(args []interface{}) string {
 	sa := make([]string, len(args))
@@ -105,14 +107,24 @@ func (c *Creator) Create(overwrite bool) error {
 // Use cstring and unsafe.Pointer to avoid allocations for C calls
 
 type Updater struct {
-	filename cstring
-	template cstring
+	filename *cstring
+	template *cstring
 
-	args []unsafe.Pointer
+	args []*cstring
 }
 
 func NewUpdater(filename string) *Updater {
-	return &Updater{filename: newCstring(filename)}
+	u := &Updater{filename: newCstring(filename)}
+	runtime.SetFinalizer(u, cfree)
+	return u
+}
+
+func cfree(u *Updater) {
+	u.filename.Free()
+	u.template.Free()
+	for _, a := range u.args {
+		a.Free()
+	}
 }
 
 func (u *Updater) SetTemplate(dsName ...string) {
@@ -122,7 +134,7 @@ func (u *Updater) SetTemplate(dsName ...string) {
 // Cache chaches data for later save using Update(). Use it to avoid
 // open/read/write/close for every update.
 func (u *Updater) Cache(args ...interface{}) {
-	u.args = append(u.args, newCstring(join(args)).p())
+	u.args = append(u.args, newCstring(join(args)))
 }
 
 // Update saves data in RRDB.
@@ -130,8 +142,8 @@ func (u *Updater) Cache(args ...interface{}) {
 // If you specify args it saves them immediately.
 func (u *Updater) Update(args ...interface{}) error {
 	if len(args) != 0 {
-		a := make([]unsafe.Pointer, 1)
-		a[0] = newCstring(join(args)).p()
+		a := make([]*cstring, 1)
+		a[0] = newCstring(join(args))
 		return u.update(a)
 	} else if len(u.args) != 0 {
 		err := u.update(u.args)

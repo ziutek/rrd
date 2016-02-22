@@ -17,6 +17,30 @@ import (
 	"unsafe"
 )
 
+type cstring C.char
+
+func newCstring(s string) *cstring {
+	cs := C.malloc(C.size_t(len(s) + 1))
+	buf := (*[1<<31 - 1]byte)(cs)[:len(s)+1]
+	copy(buf, s)
+	buf[len(s)] = 0
+	return (*cstring)(cs)
+}
+
+func (cs *cstring) Free() {
+	C.free(cs)
+}
+
+func (cs *cstring) String() string {
+	buf := (*[1<<31 - 1]byte)(unsafe.Pointer(cs))
+	for n, b := range buf {
+		if b == 0 {
+			return string(buf[:n])
+		}
+	}
+	panic("rrd: bad C string")
+}
+
 var mutex sync.Mutex
 
 func makeArgs(args []string) []*C.char {
@@ -62,10 +86,10 @@ func (c *Creator) create() error {
 	return makeError(e)
 }
 
-func (u *Updater) update(args []unsafe.Pointer) error {
+func (u *Updater) update(args []*cstring) error {
 	e := C.rrdUpdate(
-		(*C.char)(u.filename.p()),
-		(*C.char)(u.template.p()),
+		(*C.char)(u.filename),
+		(*C.char)(u.template),
 		C.int(len(args)),
 		(**C.char)(unsafe.Pointer(&args[0])),
 	)
