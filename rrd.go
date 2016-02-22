@@ -144,8 +144,9 @@ func (u *Updater) Cache(args ...interface{}) {
 func (u *Updater) Update(args ...interface{}) error {
 	if len(args) != 0 {
 		cs := newCstring(join(args))
-		err :=  u.update([]*cstring{a})
+		err :=  u.update([]*cstring{cs})
 		cs.Free()
+		return err
 	} else if len(u.args) != 0 {
 		err := u.update(u.args)
 		u.args = nil
