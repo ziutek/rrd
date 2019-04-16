@@ -125,6 +125,8 @@ var (
 
 	oDaemon = C.CString("--daemon")
 
+	oBorder = C.CString("--border")
+
 	oNoLegend = C.CString("-g")
 
 	oLazy = C.CString("-z")
@@ -270,6 +272,9 @@ func (g *Grapher) makeArgs(filename string, start, end time.Time) []*C.char {
 	}
 	if g.daemon != "" {
 		args = append(args, oDaemon, C.CString(g.daemon))
+	}
+	if g.borderWidth != defWidth {
+		args = append(args, oBorder, utoc(g.borderWidth))
 	}
 	return append(args, makeArgs(g.args)...)
 }
