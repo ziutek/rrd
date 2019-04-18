@@ -144,7 +144,7 @@ func (u *Updater) Cache(args ...interface{}) {
 func (u *Updater) Update(args ...interface{}) error {
 	if len(args) != 0 {
 		cs := newCstring(join(args))
-		err :=  u.update([]*cstring{cs})
+		err := u.update([]*cstring{cs})
 		cs.Free()
 		return err
 	} else if len(u.args) != 0 {
@@ -168,6 +168,7 @@ type Grapher struct {
 	title           string
 	vlabel          string
 	width, height   uint
+	borderWidth     uint
 	upperLimit      float64
 	lowerLimit      float64
 	rigid           bool
@@ -203,9 +204,10 @@ type Grapher struct {
 }
 
 const (
-	maxUint = ^uint(0)
-	maxInt  = int(maxUint >> 1)
-	minInt  = -maxInt - 1
+	maxUint  = ^uint(0)
+	maxInt   = int(maxUint >> 1)
+	minInt   = -maxInt - 1
+	defWidth = 2
 )
 
 func NewGrapher() *Grapher {
@@ -213,6 +215,7 @@ func NewGrapher() *Grapher {
 		upperLimit:    -math.MaxFloat64,
 		lowerLimit:    math.MaxFloat64,
 		unitsExponent: minInt,
+		borderWidth:   defWidth,
 		colors:        make(map[string]string),
 	}
 }
@@ -228,6 +231,10 @@ func (g *Grapher) SetVLabel(vlabel string) {
 func (g *Grapher) SetSize(width, height uint) {
 	g.width = width
 	g.height = height
+}
+
+func (g *Grapher) SetBorder(width uint) {
+	g.borderWidth = width
 }
 
 func (g *Grapher) SetLowerLimit(limit float64) {
