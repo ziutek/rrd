@@ -474,7 +474,7 @@ func Fetch(filename, cf string, start, end time.Time, step time.Duration) (Fetch
 	}
 	C.free(unsafe.Pointer(cDsNames))
 
-	rowCnt := (int(cEnd)-int(cStart))/int(cStep) + 1
+	rowCnt := (int(cEnd)-int(cStart))/int(cStep)
 	valuesLen := dsCnt * rowCnt
 	var values []float64
 	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&values)))
